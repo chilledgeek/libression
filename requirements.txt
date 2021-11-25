@@ -1,0 +1,10 @@
+flask
+flask-bootstrap
+arrow
+boto3
+botocore
+requests
+Wand
+pyheif
+Pillow
+pydantic
