@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block title %}Navigator{% endblock %}
+{% block content %}
+
+  <div>
+    Current path: {{ cur_dir }}
+  </div>
+
+   <div class="dropdown">
+    <button class="dropbtn">Navigation</button>
+    <div class="dropdown-content">
+      {% for nav_dir in nav_dirs %}
+        <a href="{{ url_for('render_navigation_with_path', rel_dir_no_slash=nav_dir) }}"
+           title="{{ nav_dir }}"
+        >
+          .{{ nav_dir }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div id="gallery">
+    {% for key in keys %}
+      <figure>
+        <a href="{{ url_for('get_resource', key=key) }}"
+           target="_blank"
+           title="{{ key }}"
+        >
+          <img src="{{ url_for('get_thumbnail', key=key) }}">
+        <figcaption> {{ key.split('/')[-1] }} </figcaption>
+        </a>
+      </figure>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -6,14 +6,13 @@
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.8/css/fontawesome.css" integrity="sha384-q3jl8XQu1OpdLgGFvNRnPdj5VIlCvgsDQTQB6owSOHWlAurxul7f+JpUOVdAiJ5P" crossorigin="anonymous">
   <link rel="stylesheet" href="/static/styles.css">
 {% endblock %}
-{% block title %}Flask S3 Browser{% endblock %}
+{% block title %}Libression{% endblock %}
 
 {% block navbar %}
 <div class="container">
   <div class="navbar">
     <ul class="nav navbar-nav">
-      <li><a href="{{ url_for('index') }}">Buckets</a></li>
-      <li><a href="{{ url_for('view_files') }}">Files</a></li>
+      <li><a href="{{ url_for('render_navigation') }}">Top directory</a></li>
     </ul>
   </div>
 </div>

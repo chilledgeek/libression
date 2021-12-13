@@ -37,7 +37,7 @@ class TestFileIO(unittest.TestCase):
             self.test_bucket,
         )
 
-        output = self.sut.get_object(
+        output = self.sut.get_object_body(
             "rubbish_test_key",
             self.test_bucket
         )
