@@ -1,5 +1,7 @@
 # Libression
 
+## NOTE: STILL UNDER DEVELOPMENT!!!
+
 ## About this project
 - Self-hosting media organiser
 - Written in python, developed in linux
@@ -14,11 +16,15 @@
     MINIO_ROOT_USER=admin MINIO_ROOT_PASSWORD=password ./minio server /home/e/Desktop/temp --console-address ":9001"
     ```
 - Alternative, use docker (for CI):
-  - `docker run -v /<path>/<to>/<your>/<photosdir>:/data -p 9000:9000 quay.io/minio/minio server /data`
-  - e.g. `sudo docker run -v /home/e/Desktop/temp:/data -p 9000:9000 -p 9001:9001 quay.io/minio/minio server /data --console-address ":9001"
+  - `docker run -v /<path>/<to>/<your>/<photosdir>:/data -p 9000:9000 minio/minio server /data`
+  - e.g. `sudo docker run -v /home/e/Desktop/temp:/data -p 9000:9000 -p 9001:9001 minio/minio server /data --console-address ":9001"
+
+### Web app
+- Install requirements (some non-python dependencies are required as well, e.g. codecs...more documentation later...)
+- Run with command `python app.py`
 
 ## Meaning behind the name Libression:
 - Librarian (organiser)
 - Liberate (open source, self-hosting)
 - Impression (media/photos/videos)
-- (coined by @yaxxie)
+- (term coined by [@yaxxie](https://github.com/yaxxie))
