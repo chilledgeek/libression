@@ -25,6 +25,6 @@
 
 ## Meaning behind the name Libression:
 - Librarian (organiser)
-- Liberate (open source, self-hosting)
+- Libre (free, open source, self-hosting)
 - Impression (media/photos/videos)
 - (term coined by [@yaxxie](https://github.com/yaxxie))
