@@ -20,16 +20,24 @@
   </div>
 
   <div id="gallery">
-    {% for key in keys %}
-      <figure>
-        <a href="{{ url_for('get_resource', key=key) }}"
-           target="_blank"
-           title="{{ key }}"
-        >
-          <img src="{{ url_for('get_thumbnail', key=key) }}">
-        <figcaption> {{ key.split('/')[-1] }} </figcaption>
-        </a>
-      </figure>
-    {% endfor %}
+    <form action="/update" method="post">
+      <input type="submit" value="Submit">
+      {% for key in keys %}
+        <figure>
+          <input type="checkbox" id="{{ key }}" name="impression" value="{{ key }}">
+          <img id="{{ key }}_display" src="{{ url_for('get_thumbnail', key=key) }}">
+          <figcaption> {{ key.split('/')[-1] }} </figcaption>
+        </figure>
+      {% endfor %}
+    </form>
   </div>
+
+
+<div>
+  <iframe frameborder="0" noresize="noresize"
+        style='background: transparent; width: 100%;  height:100%;'
+        src="{{ url_for('content')}}">
+ </iframe>
+</div>
+
 {% endblock %}

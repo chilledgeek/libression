@@ -15,15 +15,15 @@
 }
 
 figure {
+  position: relative;
   transition: all 0.5s;
 }
 
 figure:hover{
-  transform:scale(0.99);
+  opacity: 0.8;
 }
 
 figure:hover figcaption{
-  transition: all 0.5s;
   opacity : 0.8;
 }
 

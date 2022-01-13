@@ -1,6 +1,7 @@
 import logging
-
-from flask import Flask, render_template, Response, redirect
+import time
+from tqdm import tqdm
+from flask import Flask, render_template, Response, redirect, request
 from flask_bootstrap import Bootstrap
 
 from photo_organiser.file_organiser import FileOrganiser
@@ -67,6 +68,26 @@ def render_navigation(
         nav_dirs=nav_dirs,
         cur_dir=rel_dir_no_slash or "."
     )
+
+
+@app.route('/update', methods=['POST'])
+def update():
+    selection = request.form.getlist("impression")
+    return render_template(
+        'update.html',
+        selection=selection,
+    )
+
+
+@app.route('/content') # render the content a url differnt from index
+def content():
+    def inner():
+        # simulate a long process to watch
+        for i in tqdm(range(100)):
+            time.sleep(1)
+            # this value should be inserted into an HTML template
+            yield str(i)
+    return Response(inner(), mimetype='text/html')
 
 
 if __name__ == "__main__":
