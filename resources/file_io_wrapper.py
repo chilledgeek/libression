@@ -1,4 +1,5 @@
 import io
+import os
 from typing import Optional, List, Tuple
 import logging
 import boto3
@@ -6,11 +7,10 @@ import botocore.response
 from boto3.resources.base import ServiceResource
 
 S3_BUCKET = "test_photos"
-S3_ACCESS_KEY_ID = "minioadmin"
-S3_SECRET = "minioadmin"
-S3_ENDPOINT_URL = "http://127.0.0.1:9000"
+S3_ACCESS_KEY_ID = os.getenv("S3_ACCESS_KEY_ID", "minioadmin")
+S3_SECRET = os.getenv("S3_SECRET", "miniopassword")
+S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL", "http://127.0.0.1:9000")
 AWS_REGION = "us-east-2"
-HOST = "127.0.0.1:9000"
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +21,10 @@ class FileIOWrapper:
             aws_access_key_id: Optional[str] = None,
             aws_secret_access_key: Optional[str] = None,
             s3_endpoint_url: Optional[str] = None,
-            host: Optional[str] = None,
     ):
         self.aws_access_key_id = aws_access_key_id if aws_access_key_id is not None else S3_ACCESS_KEY_ID
         self.aws_secret_access_key = aws_secret_access_key if aws_secret_access_key is not None else S3_SECRET
         self.endpoint_url = s3_endpoint_url if s3_endpoint_url is not None else S3_ENDPOINT_URL
-        self.host = host if host is not None else host
         self._inner_s3_client: Optional[ServiceResource] = None
 
     @property
@@ -81,10 +79,7 @@ class FileIOWrapper:
         return output
 
     def get_object_body(self, key: str, bucket_name: str) -> botocore.response.StreamingBody:
-        output = self._s3_client.get_object(
-            Bucket=bucket_name,
-            Key=key,
-        )
+        output = self._s3_client.get_object(Bucket=bucket_name, Key=key)
         if "Body" in output:
             return output["Body"]
         raise FileNotFoundError
@@ -118,7 +113,7 @@ class FileIOWrapper:
         contents = response.get("Contents")
 
         if contents is None:
-            logger.info("Error with list_objects...returning empty list")
+            logger.info(f"list_objects in s3 bucket {bucket} returned no matched contents")
             return []
         else:
             output = [x["Key"] for x in contents]
@@ -139,7 +134,7 @@ class FileIOWrapper:
             self,
             bucket: str,
             get_subdir_content: bool,
-            rel_dir_no_slash: str = "",
+            rel_dir_no_leading_slash: str = "",
     ) -> Tuple[List[str], List[str]]:
         """
         e.g. Given these exist in the "data" bucket:
@@ -151,30 +146,32 @@ class FileIOWrapper:
         When specified a partial path "folder1/subfolder1",
         this function should return the subdirectories/files of subfolder1, i.e.
         (
-            ["folder1/subfolder2/subsubfolder3","folder1/subfolder2/subsubfolder4"],
-            ["folder1/subfolder1/file3.png"]  # depending on get_subdir_content, + file1 + file2
+            ["folder1/subfolder1/subsubfolder1","folder1/subfolder1/subsubfolder2"],
+            ["folder1/subfolder1/file3.png", "folder1/subfolder1/file1", "folder1/subfolder2/file2"],
         )
 
         When no partial path specified (i.e. root), should return:
         (
             ["folder0", "folder1"],
-            ["file4.png"] # depending on get_subdir_content, + file0 + file1 + file2
+            ["file4.png", "folder1/subfolder1/file3.png", "folder1/subfolder1/file1", "folder1/subfolder2/file2"],
         )
         """
         object_keys = self.list_objects(bucket,
-                                        prefix_filter=rel_dir_no_slash,
+                                        prefix_filter=rel_dir_no_leading_slash,
                                         get_all=True)
         subdirs = []
         files = []
 
         for object_key in object_keys:
-            object_key_tokens = object_key[len(rel_dir_no_slash):].split("/")
+            object_key_tokens = object_key[len(rel_dir_no_leading_slash):].split("/")
             prefix = ""
-            if rel_dir_no_slash:
-                object_key_tokens = object_key_tokens[1:]  # first token is empty str
-                prefix = f"{rel_dir_no_slash}/"
-            if len(object_key_tokens) > 1:
-                subdirs.append(f"{prefix}{object_key_tokens[0]}")
+            if rel_dir_no_leading_slash:
+                object_key_tokens = object_key_tokens[1:]  # first token is empty str [""]...remove...
+                prefix = f"{rel_dir_no_leading_slash}/"
+
+            subdir = f"{prefix}{object_key_tokens[0]}"
+            if len(object_key_tokens) > 1 and subdir not in subdirs:  # this is a subdir in dir of interest, add it...
+                subdirs.append(subdir)
             elif len(object_key_tokens) == 1:
                 files.append(object_key)
             else:
@@ -187,7 +184,7 @@ class FileIOWrapper:
         if get_subdir_content:
             files = object_keys
 
-        return sorted(set(subdirs)), sorted(set(files))
+        return sorted(subdirs), sorted(files)
 
     @staticmethod
     def _kwargs_without_none(**kwargs):

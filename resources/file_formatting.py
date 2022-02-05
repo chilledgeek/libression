@@ -1,32 +1,30 @@
 import io
+import logging
 
-import pyheif
 from botocore.response import StreamingBody
-from PIL import Image
+from wand.image import Image
+
+logger = logging.getLogger(__name__)
 
 
-def shrink_image_size(original_image: Image, fixed_width: int = 128):
-    width_percent = (fixed_width / float(original_image.size[1]))
-    height = int((float(original_image.size[0]) * float(width_percent)))
-    original_image.thumbnail((fixed_width, height))
-    buf = io.BytesIO()
-    original_image.save(buf, format='JPEG')
-    byte_im = buf.getvalue()
-    return byte_im
+def get_shrink_image_size(original_image: Image, width: int = 128):
+    width_percent = (width / float(original_image.width))
+    height = int((float(original_image.height) * float(width_percent)))
+    return width, height
 
 
-def generate_cache_content(original_contents: StreamingBody, key: str, fixed_width: int = 200):
-    image = None
+def generate_cache_content(original_contents: StreamingBody, key: str, width: int = 200):
+    try:
+        with Image(file=original_contents) as img:
+            converted = img.convert("jpg")
+            scaled_width, scaled_height = get_shrink_image_size(converted, width=width)
+            converted.resize(width=scaled_width, height=scaled_height)
 
-    # todo check https://blog.josephmisiti.com/creating-image-thumbnails-in-python-using-PIL
-    # can get metadata with some i.metadat[0].get("data")
-    if key.lower().endswith(("jpg", "jpeg", "png", "tiff")):
-        image = Image.open(original_contents)
-    elif key.lower().endswith("heic"):
-        i = pyheif.read(original_contents)
-        image = Image.frombytes(mode=i.mode, size=i.size, data=i.data)
+            buf = io.BytesIO()
+            converted.save(file=buf)
+            byte_im = buf.getvalue()
+            return byte_im
 
-    if image is None:
+    except Exception as e:
+        logger.info(f"Exception: {e}, can't read key {key}...")
         return None
-    else:
-        return shrink_image_size(image, fixed_width=fixed_width)

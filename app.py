@@ -1,6 +1,6 @@
 import logging
-import time
-from tqdm import tqdm
+from typing import Optional
+
 from flask import Flask, render_template, Response, redirect, request
 from flask_bootstrap import Bootstrap
 
@@ -26,36 +26,45 @@ def index():
 @app.route('/thumbnail/<path:key>')
 def get_thumbnail(key):
     contents = file_organiser.load_from_cache(key)
+    logging.info(f"thumbnail for {key} fetched")
     return Response(contents)
 
 
 @app.route('/media/<path:key>')
 def get_resource(key):
+    logging.info(f"processing media for {key}")
     s3_object = file_organiser.load_from_data_bucket(key)
+    logging.info(f"media for {key} processed")
     return Response(s3_object["Body"], mimetype=s3_object["ContentType"])
 
 
-@app.route('/navigator/<path:rel_dir_no_slash>')
+@app.route('/navigator/<path:rel_dir_no_leading_slash>', methods=['GET', 'POST'])
 def render_navigation_with_path(
-        rel_dir_no_slash: str,
-        get_subdir_content: bool = False,
+        rel_dir_no_leading_slash: str,
         show_hidden_content: bool = False,
+        get_subdir_content: Optional[bool] = None,
 ):
+    if get_subdir_content is None:
+        get_subdir_content = True if request.form.get('show_subfolder_content') else False
+
     return render_navigation(
-        rel_dir_no_slash=rel_dir_no_slash,
-        get_subdir_content=get_subdir_content,
+        rel_dir_no_leading_slash=rel_dir_no_leading_slash,
         show_hidden_content=show_hidden_content,
+        get_subdir_content=get_subdir_content,
     )
 
 
 @app.route('/navigator', methods=['GET', 'POST'], strict_slashes=False)
 def render_navigation(
-        rel_dir_no_slash: str = "",
-        get_subdir_content: bool = False,
+        rel_dir_no_leading_slash: str = "",
         show_hidden_content: bool = False,
+        get_subdir_content: Optional[bool] = None,
 ):
+    if get_subdir_content is None:
+        get_subdir_content = True if request.form.get('show_subfolder_content') else False
+
     nav_dirs, file_keys = file_organiser.get_rel_dirs_and_content(
-        rel_dir_no_slash=rel_dir_no_slash,
+        rel_dir_no_leading_slash=rel_dir_no_leading_slash,
         get_subdir_content=get_subdir_content,
         show_hidden_content=show_hidden_content,
     )
@@ -66,7 +75,8 @@ def render_navigation(
         'navigator.html',
         keys=file_keys,
         nav_dirs=nav_dirs,
-        cur_dir=rel_dir_no_slash or "."
+        cur_dir=rel_dir_no_leading_slash or ".",
+        get_subdir_content=get_subdir_content,
     )
 
 
@@ -79,17 +89,6 @@ def update():
     )
 
 
-@app.route('/content') # render the content a url differnt from index
-def content():
-    def inner():
-        # simulate a long process to watch
-        for i in tqdm(range(100)):
-            time.sleep(1)
-            # this value should be inserted into an HTML template
-            yield str(i)
-    return Response(inner(), mimetype='text/html')
-
-
 if __name__ == "__main__":
     file_organiser.init_buckets()
-    app.run()
+    app.run(host="0.0.0.0", port=5000)
